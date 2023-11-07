@@ -14,7 +14,7 @@ def chatbot_response(user_message,vector_db,user_prompt):
     }
 
     data = {
-        "user_id": "test",
+        "user_id": "testuser123",
         "user_prompt": user_prompt,
         "user_message": user_message,
         "vector_db_collection": vector_db
