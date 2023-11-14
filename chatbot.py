@@ -4,17 +4,17 @@ import json
 
 
 import time
-
+BASE_URL = 'http://35.202.171.250:8000'
 # Define a function to simulate the chatbot's responses
 def chatbot_response(user_message,vector_db,user_prompt):
-    url = 'http://35.202.171.250:8000/conversation'
+    url = f'{BASE_URL}/conversation'
     headers = {
         'accept': 'application/json',
         'Content-Type': 'application/json'
     }
 
     data = {
-        "user_id": "testuser123",
+        "user_id": "test",
         "user_prompt": user_prompt,
         "user_message": user_message,
         "vector_db_collection": vector_db
@@ -49,7 +49,7 @@ if selected_page == "Chat":
     # Chatbot page
     st.title("Chatbot (user_id=testuser123)")
     # Chatbot page
-    url = 'http://35.202.171.250:8000/get_collections'
+    url = f'{BASE_URL}/get_collections'
     headers = {
         'accept': 'application/json'
     }
@@ -98,8 +98,7 @@ else:
     st.title("Train Chatbot")
     with st.form(key="file_upload_form"):
         st.write("File Information")
-        file_name = st.text_input("File Name:", help="Only txt and pdf are allowed.")
-        file_content = st.text_area("File Content:")
+        file_name = st.file_uploader("Upload File (txt or pdf):", type=["txt", "pdf"])
         vector_db_name = st.text_input("Vector DB Name:")
 
         # Use JavaScript to trigger the form submission on Enter key press
@@ -124,36 +123,35 @@ else:
     # Handle the form submission
     if submit_button:
         with st.spinner("Uploading file..."):
-            # Perform file upload and processing here
-            # You can access the user input using file_name, file_content, and vector_db_name
-            # Example: Save the uploaded file, perform processing, etc.
-            print("File Name:", file_name)
-            print("File Content:", file_content)
-            print("Vector DB Name:", vector_db_name)
-            # Simulate a chatbot response
-            url = 'http://35.202.171.250:8000/upload_content'
-            headers = {
-                'accept': 'application/json',
-                'Content-Type': 'application/json'
-            }
+            if file_name is not None:
+                # Prepare data for the request
+                url = f'{BASE_URL}/upload_content'
+                headers = {
+                    'accept': 'application/json',
+                }
 
-            data = {
-                "file_name": file_name,
-                "file_content": file_content,
-                "vector_db_collection": vector_db_name
-            }
+                # Determine file type
+                file_type = "application/pdf" if file_name.type == "application/pdf" else "text/plain"
 
-            response = requests.post(url, headers=headers, data=json.dumps(data))
+                files = {'file': (file_name.name, file_name, file_type)}
+                params = {'vector_db_collection': vector_db_name}
 
-            if response.status_code == 200:
-                print("Request was successful")
-                print(response.json())
-                bot_response = response.json()['message']
-                st.markdown(f'<div style="background-color: #338864; color: white; padding: 10px; border-radius: 10px;">Message: {bot_response}</div>', unsafe_allow_html=True)
+                # Make the API request
+                response = requests.post(url, headers=headers, files=files, params=params)
+
+                if response.status_code == 200:
+                    print("Request was successful")
+                    print(response.json())
+                    bot_response = response.json()['message']
+                    st.markdown(
+                        f'<div style="background-color: #338864; color: white; padding: 10px; border-radius: 10px;">Message: {bot_response}</div>',
+                        unsafe_allow_html=True)
+                else:
+                    print("Request failed with status code:", response.status_code)
+                    print(response.text)
+                    bot_response = response.json()['message']
+                    st.markdown(
+                        f'<div style="background-color: #D30000; color: white; padding: 10px; border-radius: 10px;">Message: {bot_response}</div>',
+                        unsafe_allow_html=True)
             else:
-                print("Request failed with status code:", response.status_code)
-                print(response.text)
-                bot_response = response.json()['message']
-                st.markdown(f'<div style="background-color: #D30000; color: white; padding: 10px; border-radius: 10px;">Message: {bot_response}</div>', unsafe_allow_html=True)
-                        
-            
+                st.warning("Please upload a .txt or .pdf file before submitting.")
